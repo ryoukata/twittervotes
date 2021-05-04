@@ -84,3 +84,72 @@ func makeRequest(req *http.Request, params url.Values) (*http.Response, error) {
 	
 	return httpClient.Do(req)
 }
+
+// struct of Tweet Statement.
+type tweet struct {
+	Text string
+}
+
+// read Tweet form Twitter API.
+func readFromTwitter(votes chan<- string) {
+	options, err := loadOptions()
+	if err != nil {
+		log.Println("failed to load choices.: ", err)
+		return
+	}
+	u, err := url.Parse("https://stream.twitter.com/1.1/statuses/filter.json")
+	if err != nil {
+		log.Println("failed to analyze URL.: ", err)
+		return
+	}
+	query := make(url.Values)
+	query.Set("track", strings.Join(options, ","))
+	req, err := http.NewRequest("POST", u.String(), strings.NewReader(query.Encode()))
+	if err != nil {
+		log.Println("failed to create search request.: ", err)
+		return
+	}
+	resp, err := makeRequest(req, query)
+	if err != nil {
+		log.Println("failed to search request.: ", err)
+		return
+	}
+	reader = resp.Body
+	decoder := json.NewDecoder(reader)
+	for {
+		var tweet tweet
+		if err := decoder.Decode(&tweet); err != nil {
+			break
+		}
+		for _, option := range options {
+			if strings.Contains(strings.ToLower(tweet.Text), strings.ToLower(option)) {
+				log.Println("Vote: ", option)
+				votes <- option
+			}
+		}
+	}
+}
+
+// inqure Twitter to stop or inqure.
+func startTwitterStream(stopchan <-chan struct{}, votes chan<- string) <-chan struct{} {
+	stoppedchan := make(chan struct{}, 1)
+	go func() {
+		defer func() {
+			stoppedchan <- struct{}{}
+		}()
+		for {
+			select {
+			case <-stopchan:
+				log.Println("Terminate to inquire Twitter...")
+				return
+			default:
+				log.Println("Inquire Twitter...")
+				readFromTwitter(votes)
+				log.Println(" (Waiting...) ")
+				// reconnect after wating.
+				time.Sleep(10 * time.Second)
+			}
+		}
+	}()
+	return stoppedchan
+}
