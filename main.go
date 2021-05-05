@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bitly/go-nsq"
+	"github.com/nsqio/go-nsq"
 	"gopkg.in/mgo.v2"
 )
 
@@ -18,7 +18,15 @@ var db *mgo.Session
 func dialdb() error {
 	var err error
 	log.Println("dialing to MongoDB...: localhost")
-	db, err = mgo.Dial("localhost")
+	mongoInfo := &mgo.DialInfo{
+		Addrs:    []string{"localhost:27017"},
+		Timeout:  20 * time.Second,
+		Database: "ballots",
+		Username: "mongo",
+		Password: "mongo",
+		Source:   "ballots",
+	}
+	db, err = mgo.DialWithInfo(mongoInfo)
 
 	return err
 }
