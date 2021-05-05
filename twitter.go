@@ -1,9 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"net"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/garyburd/go-oauth/oauth"
@@ -66,13 +72,14 @@ func setupTwitterAuth() {
 
 var (
 	authSetupOnce sync.Once
-	httpClient *http.Client
+	httpClient    *http.Client
 )
+
 func makeRequest(req *http.Request, params url.Values) (*http.Response, error) {
 	authSetupOnce.Do(func() {
 		setupTwitterAuth()
 		httpClient = &http.Client{
-			Transport := &http.Transport{
+			Transport: &http.Transport{
 				Dial: dial,
 			},
 		}
@@ -81,7 +88,7 @@ func makeRequest(req *http.Request, params url.Values) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Content-Length", strconv.Itoa(len(formEnc)))
 	req.Header.Set("Authorization", authClient.AuthorizationHeader(creds, "POST", req.URL, params))
-	
+
 	return httpClient.Do(req)
 }
 
