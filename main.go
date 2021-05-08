@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joeshaw/envdecode"
 	"github.com/nsqio/go-nsq"
 	"gopkg.in/mgo.v2"
 )
@@ -17,14 +18,25 @@ var db *mgo.Session
 
 func dialdb() error {
 	var err error
+	var mongoEnv struct {
+		MongoHost   string `env:"MONGO_HOST,required"`
+		MongoPort   string `env:"MONGO_PORT,required"`
+		MongoDB     string `env:"MONGO_DB,required"`
+		MongoUser   string `env:"MONGO_USER,required"`
+		MongoPass   string `env:"MONGO_PASS,required"`
+		MongoSource string `env:"MONGO_SOURCE,required"`
+	}
+	if err := envdecode.Decode(&mongoEnv); err != nil {
+		log.Fatalln(err)
+	}
 	log.Println("dialing to MongoDB...: localhost")
 	mongoInfo := &mgo.DialInfo{
-		Addrs:    []string{"localhost:27017"},
+		Addrs:    []string{mongoEnv.MongoHost + ":" + mongoEnv.MongoPort},
 		Timeout:  20 * time.Second,
-		Database: "ballots",
-		Username: "mongo",
-		Password: "mongo",
-		Source:   "ballots",
+		Database: mongoEnv.MongoDB,
+		Username: mongoEnv.MongoUser,
+		Password: mongoEnv.MongoPass,
+		Source:   mongoEnv.MongoSource,
 	}
 	db, err = mgo.DialWithInfo(mongoInfo)
 
@@ -55,12 +67,20 @@ func loadOptions() ([]string, error) {
 
 // publish votes result to NSQ Topic.
 func publishVotes(votes <-chan string) <-chan struct{} {
+	var nsqEnv struct {
+		NsqHost  string `env:"NSQ_HOST,required"`
+		NsqPort  string `env:"NSQ_PORT,required"`
+		NsqTopic string `env:"NSQ_TOPIC,required"`
+	}
+	if err := envdecode.Decode(&nsqEnv); err != nil {
+		log.Fatalln(err)
+	}
 	stopchan := make(chan struct{}, 1)
-	pub, _ := nsq.NewProducer("localhost:4150", nsq.NewConfig())
+	pub, _ := nsq.NewProducer(nsqEnv.NsqHost+":"+nsqEnv.NsqPort, nsq.NewConfig())
 	go func() {
 		for vote := range votes {
 			// publish vote result.
-			pub.Publish("votes", []byte(vote))
+			pub.Publish(nsqEnv.NsqTopic, []byte(vote))
 		}
 		log.Println("Publisher: Terminating...")
 		pub.Stop()
