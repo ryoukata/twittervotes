@@ -2,6 +2,7 @@ FROM alpine:latest
 
 ### Twitter APIを呼び出すためにコンテナ内にCA証明書をインストール
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+RUN ls -al
 
 ARG SP_TWITTER_KEY
 ARG SP_TWITTER_SECRET
