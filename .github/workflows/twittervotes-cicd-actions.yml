@@ -47,10 +47,10 @@ jobs:
 
     # Goのビルドで生成したバイナリーに実行権限を追加
     - name: Add Permission to binary
-      run: chmod +x twittervotes
+      run: chmod +x twittervotes/twittervotes
 
     - name: Debug
-      run: ls -al
+      run: ls -al twittervotes/twittervotes
 
     # TODO：GitHubのコンテナレジストリにログイン
     - name: Login GitHub Registory
