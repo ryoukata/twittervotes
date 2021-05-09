@@ -1,0 +1,57 @@
+name: twittervotes-cicd-actions
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-app:
+    name: job build-app
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: Build
+      run: GOOS=linux go build -o twittervotes
+
+    # バイナリーをartifactディレクトリにコピーする
+    - name: Copy artifact
+      run: mkdir -p artifact && cp twittervotes artifact/
+
+    # artifactディレクトリ内のファイルをアーティファクトとして保存する
+    - uses: actions/upload-artifact@v1
+      with:
+        name: twittervotes
+        path: artifact
+
+  build-container-image-and-push-image:
+    name: job build-container-image-push-image
+    needs: build-app
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    # 前のジョブで作成したバイナリーを取得
+    - uses: actions/download-artifact@v1
+      with:
+        name: twittervotes
+
+    # TODO：環境変数の設定を追加
+    - name: Build the Docker image 
+      run: |
+        docker build --tag ghcr.io/ryoukata/twitter-votes-app/twitter-votes 
+        --build-arg SP_TWITTER_KEY=${{ secrets.SP_TWITTER_KEY }} 
+        --build-arg SP_TWITTER_SECRET=${{ secrets.SP_TWITTER_SECRET }} 
+        --build-arg SP_TWITTER_ACCESSTOKEN=${{ secrets.SP_TWITTER_ACCESSTOKEN }} 
+        --build-arg SP_TWITTER_ACCESSSECRET=${{ secrets.SP_TWITTER_ACCESSSECRET }} 
+        --build-arg MONGO_PASS=${{ secrets.MONGO_PASS }} 
+        .
+
+    - name: Push the Docker image 
+      run: docker push ghcr.io/ryoukata/twitter-votes-app/twitter-votes
