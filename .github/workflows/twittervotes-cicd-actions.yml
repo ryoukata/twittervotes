@@ -20,9 +20,6 @@ jobs:
     - name: Build
       run: GOOS=linux CGO_ENABLED=0 go build -o twittervotes
 
-    - name: Debug
-      run: ls -al
-
     # バイナリーをartifactディレクトリにコピーする
     - name: Copy artifact
       run: mkdir -p artifact && cp twittervotes artifact/
@@ -40,7 +37,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # 前のジョブで作成したバイナリーを取得
+    # 前のジョブで作成したバイナリーを取得（ディレクトリが作成され、その中にバイナリーが入るみたい）
     - uses: actions/download-artifact@v1
       with:
         name: twittervotes
@@ -48,9 +45,6 @@ jobs:
     # Goのビルドで生成したバイナリーに実行権限を追加
     - name: Add Permission to binary
       run: chmod +x twittervotes/twittervotes
-
-    - name: Debug
-      run: ls -al twittervotes/twittervotes
 
     # TODO：GitHubのコンテナレジストリにログイン
     - name: Login GitHub Registory

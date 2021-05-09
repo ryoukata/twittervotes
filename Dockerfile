@@ -15,6 +15,5 @@ ENV MONGO_HOST=twitter-votes-mongodb MONGO_PORT=27017 MONGO_DB=ballots MONGO_USE
 ENV NSQ_HOST=twitter-votes-nsqd NSQ_PORT=4150 NSQ_TOPIC=votes
 
 COPY twittervotes .
-RUN ls -al twittervotes
 
 ENTRYPOINT ["./twittervotes"]
