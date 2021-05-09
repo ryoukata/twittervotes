@@ -42,6 +42,10 @@ jobs:
       with:
         name: twittervotes
 
+    # Goのビルドで生成したバイナリーに実行権限を追加
+    - name: Add Permission to binary
+      run: chmod +x twittervotes
+
     # TODO：GitHubのコンテナレジストリにログイン
     - name: Login GitHub Registory
       run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
