@@ -21,7 +21,7 @@ jobs:
       run: GOOS=linux go build -o twittervotes
 
     - name: Debug
-      run: ls -al twittervotes
+      run: ls -al
 
     # バイナリーをartifactディレクトリにコピーする
     - name: Copy artifact
@@ -50,7 +50,7 @@ jobs:
       run: chmod +x twittervotes
 
     - name: Debug
-      run: ls -al twittervotes
+      run: ls -al
 
     # TODO：GitHubのコンテナレジストリにログイン
     - name: Login GitHub Registory
